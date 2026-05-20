@@ -230,10 +230,9 @@ class ScenePlay extends Phaser.Scene {
             alpha: 0,
             duration: 400,
             delay: 150,
-            onComplete: function() {
+            onComplete: () => {
                 this.overlayGelap.setVisible(false);
-            },
-            onCompleteScope: this
+            }
         });
 
         // Mulai karakter naik
@@ -263,9 +262,9 @@ class ScenePlay extends Phaser.Scene {
         }
 
         // Transisi ke menu setelah 2 detik
-        this.time.delayedCall(2000, function() {
+        this.time.delayedCall(2000, () => {
             this.scene.start('SceneMenu');
-        }, [], this);
+        });
     }
 
     update() {

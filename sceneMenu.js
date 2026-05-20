@@ -176,10 +176,9 @@ class SceneMenu extends Phaser.Scene {
                     duration: 500,
                     delay: 200,
                     ease: 'Linear',
-                    onComplete: function() {
+                    onComplete: () => {
                         this.scene.start('ScenePlay');
-                    },
-                    onCompleteScope: this
+                    }
                 });
             }
         }, this);
