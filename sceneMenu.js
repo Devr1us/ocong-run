@@ -211,6 +211,14 @@ class SceneMenu extends Phaser.Scene {
                     delay: 200,
                     ease: 'Linear',
                     onComplete: () => {
+                        // Pastikan mummy sudah bersih sebelum pindah scene
+                        this.mummyHidup = false;
+                        if (this.mummyAktif && this.mummyAktif.active) {
+                            this.tweens.killTweensOf(this.mummyAktif);
+                            this.mummyAktif.setVisible(false);
+                            this.mummyAktif.destroy();
+                            this.mummyAktif = null;
+                        }
                         this.scene.start('ScenePlay');
                     }
                 });
