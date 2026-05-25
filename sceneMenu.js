@@ -37,17 +37,38 @@ class SceneMenu extends Phaser.Scene {
         bg.setDisplaySize(this.scale.width, this.scale.height);
 
         // =====================
-        // Mummy Sprite (ornamen)
+        // Mummy Sprite (ornamen berjalan)
         // =====================
-        this.anims.create({
-            key: 'mummy_walk',
-            frames: this.anims.generateFrameNumbers('mummy', { start: 0, end: 7 }),
-            frameRate: 10,
-            repeat: -1
-        });
-        var mummy = this.add.sprite(200, BOTTOM - 80, 'mummy');
-        mummy.setScale(2.5);
-        mummy.play('mummy_walk');
+        if (!this.anims.exists('mummy_walk')) {
+            this.anims.create({
+                key: 'mummy_walk',
+                frames: this.anims.generateFrameNumbers('mummy', { start: 0, end: 7 }),
+                frameRate: 10,
+                repeat: -1
+            });
+        }
+
+        var spawnMummy = () => {
+            var mummy = this.add.sprite(RIGHT + 50, BOTTOM - 80, 'mummy');
+            mummy.setScale(2.5);
+            mummy.setFlipX(true); // hadap ke kiri
+            mummy.play('mummy_walk');
+
+            this.tweens.add({
+                targets: mummy,
+                x: -100,
+                duration: 6000,
+                ease: 'Linear',
+                onComplete: () => {
+                    mummy.destroy();
+                    // Spawn mummy berikutnya setelah jeda acak
+                    this.time.delayedCall(Phaser.Math.Between(1000, 3000), spawnMummy);
+                }
+            });
+        };
+
+        // Mulai dengan jeda singkat agar tidak langsung muncul
+        this.time.delayedCall(500, spawnMummy);
 
         // =====================
         // Tombol Play
