@@ -32,9 +32,10 @@ class ScenePlay extends Phaser.Scene {
         // State & Variabel Game
         // =====================
         this.isGameRunning  = false;
+        this.isGameOver     = false;  // Fix: guard agar gameOver tidak dipanggil 2x
         this.currentLevel   = 1;
         this.nilaiPemain    = 0;
-        this.timerHalangan  = 0;
+        this.timerHalangan  = 90;     // Fix: mulai dengan nilai positif agar halangan tidak spawn di frame pertama
         this.halangan       = [];
         this.charaTweens    = null;
 
@@ -150,22 +151,19 @@ class ScenePlay extends Phaser.Scene {
         // Partikel
         // =====================
         try {
-            this.particles = this.add.particles('flares');
-            this.emitter = this.particles.createEmitter({
+            this.particles = this.add.particles(0, 0, 'flares', {
                 frame: 'blue',
-                x: 200,
-                y: MIDDLE,
                 speed: { min: 50, max: 150 },
                 angle: { min: 0, max: 360 },
                 scale: { start: 0.4, end: 0 },
                 blendMode: 'ADD',
                 lifespan: 400,
                 quantity: 8,
-                on: false
+                emitting: false
             });
+            this.particles.setDepth(10);
         } catch(e) {
             this.particles = null;
-            this.emitter = null;
         }
 
         // =====================
@@ -180,7 +178,6 @@ class ScenePlay extends Phaser.Scene {
             }
 
             // Saat game berjalan = turunkan karakter
-            // Hentikan tween sebelumnya
             if (this.charaTweens) {
                 this.charaTweens.stop();
             }
@@ -198,20 +195,17 @@ class ScenePlay extends Phaser.Scene {
             });
 
             // Partikel
-            if (this.emitter) {
-                this.emitter.setPosition(this.chara.x, this.chara.y);
-                this.emitter.explode(8, this.chara.x, this.chara.y);
+            if (this.particles) {
+                this.particles.setPosition(this.chara.x, this.chara.y);
+                this.particles.explode(8);
             }
 
         }, this);
-
-        // =====================
-        // Fisika dimatikan dulu (baru aktif saat play)
-        // =====================
     }
 
     startGame() {
         this.isGameRunning = true;
+        this.isGameOver    = false;
 
         // Sembunyikan overlay
         this.tweens.add({
@@ -234,16 +228,12 @@ class ScenePlay extends Phaser.Scene {
                 this.overlayGelap.setVisible(false);
             }
         });
-
-        // Mulai karakter naik
-        this.startCharaUp();
-    }
-
-    startCharaUp() {
-        // Karakter naik terus-menerus di update
     }
 
     gameOver() {
+        // Fix: guard agar tidak dipanggil lebih dari sekali
+        if (this.isGameOver) return;
+        this.isGameOver    = true;
         this.isGameRunning = false;
 
         // Hentikan tween karakter
@@ -255,8 +245,7 @@ class ScenePlay extends Phaser.Scene {
         this.snd_dead.play();
 
         // Simpan high score
-        var highscore = localStorage.getItem('highscore') || 0;
-        highscore = parseInt(highscore);
+        var highscore = parseInt(localStorage.getItem('highscore') || 0);
         if (this.nilaiPemain > highscore) {
             localStorage.setItem('highscore', this.nilaiPemain);
         }
@@ -283,7 +272,6 @@ class ScenePlay extends Phaser.Scene {
             for (var j = 0; j < layer.length; j++) {
                 var bg = layer[j];
                 bg.x -= bg.getData('kecepatan');
-                // Reset posisi jika sudah keluar layar kiri
                 if (bg.x <= -683) {
                     bg.x = 683 + 1366;
                 }
@@ -296,10 +284,8 @@ class ScenePlay extends Phaser.Scene {
         this.timerHalangan--;
 
         if (this.timerHalangan <= 0) {
-            // Reset timer: muncul setiap 60-120 frame
             this.timerHalangan = Phaser.Math.Between(60, 120);
 
-            // Buat halangan baru
             var obstacle = this.add.image(1500, Phaser.Math.Between(60, 680), 'obstc');
             obstacle.setOrigin(1, 0.5);
             obstacle.setDepth(5);
@@ -315,14 +301,12 @@ class ScenePlay extends Phaser.Scene {
             var obs = this.halangan[h];
             obs.x -= obs.getData('kecepatan');
 
-            // Tambah nilai jika halangan melewati karakter
             if (obs.getData('status_aktif') && obs.x < this.chara.x) {
                 obs.setData('status_aktif', false);
                 this.nilaiPemain += 1;
                 this.txtNilai.setText('' + this.nilaiPemain);
             }
 
-            // Hapus jika keluar layar kiri
             if (obs.x < -100) {
                 obs.destroy();
                 this.halangan.splice(h, 1);
@@ -339,11 +323,7 @@ class ScenePlay extends Phaser.Scene {
                 hObj.x - 30, hObj.y
             );
             if (dist < 50) {
-                // Efek merah pada karakter
                 this.chara.setTint(0xff0000);
-                this.time.delayedCall(200, function() {
-                    if (this.chara) this.chara.clearTint();
-                }, [], this);
                 this.gameOver();
                 return;
             }

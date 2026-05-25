@@ -48,6 +48,7 @@ class SceneMenu extends Phaser.Scene {
             });
         }
 
+        // Reset state mummy setiap kali scene di-create
         this.mummyAktif = null;
         this.mummyHidup = true;
 
@@ -137,8 +138,13 @@ class SceneMenu extends Phaser.Scene {
 
         // =====================
         // Sound ambience
+        // Fix: cek apakah sound sudah berjalan sebelum membuat baru
         // =====================
-        if (!snd_ambience) {
+        if (!snd_ambience || !snd_ambience.isPlaying) {
+            if (snd_ambience) {
+                snd_ambience.destroy();
+                snd_ambience = null;
+            }
             snd_ambience = this.sound.add('ambience', { loop: true, volume: 0.35 });
             snd_ambience.play();
         }
