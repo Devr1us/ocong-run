@@ -48,11 +48,17 @@ class SceneMenu extends Phaser.Scene {
             });
         }
 
+        this.mummyAktif = null;
+        this.mummyHidup = true;
+
         var spawnMummy = () => {
+            if (!this.mummyHidup) return;
+
             var mummy = this.add.sprite(RIGHT + 50, BOTTOM - 80, 'mummy');
             mummy.setScale(2.5);
-            mummy.setFlipX(true); // hadap ke kiri
+            mummy.setFlipX(true);
             mummy.play('mummy_walk');
+            this.mummyAktif = mummy;
 
             this.tweens.add({
                 targets: mummy,
@@ -60,8 +66,9 @@ class SceneMenu extends Phaser.Scene {
                 duration: 6000,
                 ease: 'Linear',
                 onComplete: () => {
-                    mummy.destroy();
-                    // Spawn mummy berikutnya setelah jeda acak
+                    if (mummy && mummy.active) mummy.destroy();
+                    this.mummyAktif = null;
+                    if (!this.mummyHidup) return;
                     this.time.delayedCall(Phaser.Math.Between(1000, 3000), spawnMummy);
                 }
             });
@@ -206,4 +213,14 @@ class SceneMenu extends Phaser.Scene {
     }
 
     update() {}
+
+    shutdown() {
+        // Hentikan semua mummy saat scene ditinggalkan
+        this.mummyHidup = false;
+        if (this.mummyAktif && this.mummyAktif.active) {
+            this.tweens.killTweensOf(this.mummyAktif);
+            this.mummyAktif.destroy();
+            this.mummyAktif = null;
+        }
+    }
 }
